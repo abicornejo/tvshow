@@ -1,7 +1,14 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 El ejemplo de este proyecto lo puedes ver en 
-http://forecastlorenzo.itcodesolutions.com/
+http://tvshow.itcodesolutions.com/
+
+Utilice redux y webhook porque trabjas de una manera muy rapida con las
+nuevas funcionalidades de react
+
+Por motivos de tiempo solo use bootstrap 4 para los estilos
+me hubiera gustado poder acomodar de mejor manera los estilos
+usando sass o less
 
 ## Available Scripts
 

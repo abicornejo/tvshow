@@ -1,40 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {Map, Marker, GoogleApiWrapper} from 'google-maps-react';
 import { connect } from 'react-redux';
 import axios from 'axios';
-import favorite from './data/favoriteshow';
-
-
-const cors = require('cors');
-const morgan = require('morgan');
-const fs = require('fs');
-const bodyParser = require('body-parser');
-const promisify = require('util').promisify;
-
-// const writeFilePromise = promisify(fs.writeFile);
-// const WriteTextToFileAsync = async (contentToWrite) => {
-//
-//     try {
-//         // FIXME: give your own path, this is just a dummy path
-//         const path = './data/favoriteshow.json';
-//         await writeFilePromise(contentToWrite, favorite);
-//     } catch(err) {
-//         throw new Error(`Could not write file because of {err}`);
-//     }
-// }
 
 const style = {
-    table: {
-        borderCollapse: 'collapse',
-        width:'100%'
-    },
-    tableCell: {
-        border: '1px solid gray',
-        margin: 0,
-        padding: '5px 10px',
-        width: 'max-content',
-        minWidth: '150px'
-    },
     form: {
         container: {
             padding: '20px',
@@ -82,9 +50,6 @@ const style = {
         alignItems: "center",
     }
 }
-function LoadingContainer() {
-    return <div>Fancy loading container!</div>
-}
 
 const List = ({ search }) => {
 
@@ -94,63 +59,76 @@ const List = ({ search }) => {
     const [showModal, setShowModal] = useState(false);
     const [showSelected, setShowSelected] = useState(false);
     const [showIMDB, setShowIMDB] = useState(false);
-
+    const [showQuestion, setShowQuestion] = useState(false);
     useEffect(() => {
         (async () => {
             try {
-
+                debugger;
                 let lstFavorites = JSON.parse(localStorage.getItem("favorites") || "[]");
                 setListFavorites(lstFavorites);
-                const currentSearch = search ? 'search/' : '';
-                const searchDynamic = search ? `?q=${search}` : '';
 
-                axios.get(`http://api.tvmaze.com/${currentSearch}shows${searchDynamic}`)
-                    .then((data) => {
-                    if(data.data) {
-                       // this._app.purchaseDetails = purchaseDetails.concat();;
-                        let arrayTemp = [];
-                        data.data.map(item => {
-                            const newShow = {
-                                id: item?.show?.id || item.id,
-                                name: item?.show?.name || item.name,
-                                imageMedium: item?.show?.image?.medium || item.image.medium ,
-                                imageOriginal: item?.show?.image?.original || item.image.original,
-                                summary: item?.show?.summary || item.summary,
-                                imdb: item?.show?.externals?.imdb || item.externals.imdb
+                if(showFavorites && listFavorites.length && search){
+                    lstFavorites = lstFavorites.filter(item =>{
+
+                        return item.name.toLowerCase().indexOf(search.toLowerCase()) !== -1;
+                    });
+                    setListFavorites(lstFavorites);
+                } else {
+                    const currentSearch = search ? 'search/' : '';
+                    const searchDynamic = search ? `?q=${search}` : '';
+
+                    axios.get(`http://api.tvmaze.com/${currentSearch}shows${searchDynamic}`)
+                        .then((data) => {
+                            if (data.data) {
+
+                                let arrayTemp = [];
+                                data.data.map(item => {
+                                    const newShow = {
+                                        id: item?.show?.id || item?.id,
+                                        name: item?.show?.name || item?.name,
+                                        imageMedium: item?.show?.image?.medium || item.image?.medium,
+                                        imageOriginal: item?.show?.image?.original || item.image?.original,
+                                        summary: item?.show?.summary || item?.summary,
+                                        imdb: item?.show?.externals?.imdb || item.externals?.imdb
+                                    }
+                                    arrayTemp.push(newShow);
+                                });
+                                setListShows(arrayTemp);
+
                             }
-                            arrayTemp.push(newShow);
+                        })
+                        .catch(error => {
+                            //setCity(null);
                         });
-                        setListShows(arrayTemp);
 
-                        // setCity(newCity);
-                        // if(listCities.length === 5){
-                        //     listCities.pop();
-                        // }setListShows
-                        //
-                        // const cityExists = listCities.find(item => item.id === newCity.id);
-                        // if(!cityExists) {
-                        //
-                        //     listCities.unshift(newCity);
-                        //     setListCities(listCities);
-                        //     localStorage.setItem("cities", JSON.stringify(listCities));
-                        // }
-                    }
-                })
-                .catch(error => {
-                    //setCity(null);
-                });
+                }
+
             } catch (error) {
                 //setCity(null);
             };
+
+
+
+
+
         })();
 
     }, [search]);
 
-    const addFavorites = (show, e) =>{
+    const deleteFromFavorites = ( e) => {
+        e.preventDefault();debugger;
 
-        if(e){
-            e.preventDefault()
+        if(existsInFavorites(showSelected.id)){
+            setShowQuestion(true);
+        }else {
+            addFavorites(showSelected);
         }
+    }
+    const addFavorites = (show, e) =>{
+        if(e){
+            e.preventDefault();
+        }
+
         let tmpListFavorite = [];
 
         if(existsInFavorites(show.id)){
@@ -162,6 +140,10 @@ const List = ({ search }) => {
         setListFavorites(tmpListFavorite);
         localStorage.setItem("favorites", JSON.stringify(tmpListFavorite));
 
+        if(showQuestion){
+            setShowQuestion(false);
+        }
+
 
     }
     const showImdb = (e,show) => {
@@ -172,7 +154,6 @@ const List = ({ search }) => {
     const Modal = ({ show, handleClose, children, element }) => {
         const showHideClassName = show ? "modal display-block" : "modal display-none";
         const exists = existsInFavorites(element.id || -1);
-        //element.imdb = element.imdb ? "https://www.imdb.com/title/"+ element.imdb : element.imdb ;
         return (
             <div className={showHideClassName}>
                 <section className="modal-main text-center">
@@ -181,7 +162,7 @@ const List = ({ search }) => {
                     </button>
                     <div>
                         <h2>{element?.name}</h2>
-                        <a href="" onClick={ (e)=> addFavorites(element, e)}>
+                        <a href="" onClick={ (e)=> deleteFromFavorites(e)}>
                             { exists ? 'Remove from favorites' :'Add to favorites'}
                         </a>
                         <br/>
@@ -206,8 +187,8 @@ const List = ({ search }) => {
 
     const viewFavorites = (e) => {
         e.preventDefault();
-        setShowFavorites(true);
-        setListShows(listFavorites);
+        setShowFavorites(showFavorites !== true);
+        //setListShows(showFavorites ? listFavorites : listShow);
     }
 
     const openModal = (show) =>{
@@ -216,7 +197,9 @@ const List = ({ search }) => {
 
     }
 
-    const rows = listShow.map((item, index ) => {
+    const listDynamic = showFavorites ? listFavorites : listShow;
+
+    const rows = listDynamic.map((item, index ) => {
 
         return  (<tr key={index}>
             <td className="text-center">
@@ -253,9 +236,29 @@ const List = ({ search }) => {
                 </div>
             </div>
             <Modal element={showSelected} show={showModal} handleClose={()=>setShowModal(false)}>
-                {/*<p>Modal</p>*/}
-                {/*<p>Data</p>*/}
+
             </Modal>
+            <div className={ showQuestion ? "modal display-block" : "modal display-none"} tabIndex="-1" role="dialog">
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">Question</h5>
+                            <button type="button" className="close" data-dismiss="modal" aria-label="Close" onClick={()=>setShowQuestion(false)}>
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <p>¿Do you want to remove this element from favorites?</p>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" data-dismiss="modal" onClick={()=>setShowQuestion(false)}>Close</button>
+                            <button type="button" className="btn btn-primary" onClick={(e) => addFavorites(showSelected, e)}>Save changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
         </div>
     )
 }
@@ -267,8 +270,5 @@ const mapStateToProps = state => ({
     search: state.simpleReducer.search
 });
 
-export default connect(mapStateToProps, null)(GoogleApiWrapper({
-    apiKey: ("AIzaSyB5UcwUUe4l2aXDcZbKvHZmcxi4rb04k8c"),
-    LoadingContainer: LoadingContainer
-})(List));
+export default connect(mapStateToProps, null)(List);
 
