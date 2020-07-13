@@ -10,6 +10,15 @@ Por motivos de tiempo solo use bootstrap 4 para los estilos
 me hubiera gustado poder acomodar de mejor manera los estilos
 usando sass o less
 
+Los componentes estan dentro de la carpeta componente asi como 
+tambien los reducers y los actions en sus respectivas carpetas
+
+I didn´t have much time to solve this project but you can see 
+the structure basic to work with react and redux  and to fetch the information
+using axios is very simple to consume some service
+
+
+
 ## Available Scripts
 
 In the project directory, you can run:
